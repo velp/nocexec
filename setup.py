@@ -41,7 +41,7 @@ setup(
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 3',
         'Topic :: System :: Networking',
-        'Topic :: System :: Systems Administratio',
+        'Topic :: System :: Systems Administration',
         'Topic :: Software Development :: Libraries :: Python Modules'
     ],
     install_requires=["pexpect", "ncclient>=0.5"],
