@@ -259,7 +259,7 @@ class NetConfClient(object):  # pylint: disable=too-many-instance-attributes
 
     # pylint: disable=too-many-arguments
     def __init__(self, device="", login="", password="", timeout=5,
-                 exclusive=True, ignore_rpc_errors=None):
+                 device_params=None, exclusive=True, ignore_rpc_errors=None):
         self.device = device
         self.login = login
         self.password = password
@@ -267,6 +267,7 @@ class NetConfClient(object):  # pylint: disable=too-many-instance-attributes
         self.cli = None
         self.exclusive = exclusive
         self._configuration_lock = False
+        self.device_params = device_params or {'name': 'junos'}
         if ignore_rpc_errors is None:
             self.ignore_rpc_errors = [
                 # delete not existing configuration
@@ -323,7 +324,7 @@ class NetConfClient(object):  # pylint: disable=too-many-instance-attributes
                                        username=self.login,
                                        password=self.password,
                                        timeout=self.timeout,
-                                       device_params={'name': 'junos'},
+                                       device_params=self.device_params,
                                        hostkey_verify=False)
         except AuthenticationError:
             LOG.error("authentication failed on '%s'", self.device)

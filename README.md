@@ -52,6 +52,17 @@ Using a basic NetConf client
     </rpc-reply>\n'
 ```
 
+Using a basic JunOS driver
+
+```python
+>>> with JunOS("192.168.0.1", "user", "password") as cli:
+...     cli.view("clear arp hostname 8.8.8.8", tostring=True)
+...     cli.save()
+... 
+True
+```
+
+
 ## Tests
 You can run the tests by invoking
 ```bash
