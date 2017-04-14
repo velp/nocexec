@@ -8,7 +8,7 @@ import sys
 import os
 from setuptools import setup
 
-if sys.version_info < (2, 6):
+if sys.version_info < (2, 7):
     raise Exception("NOCExec requires Python 2.7 or higher.")
 
 # Hard linking doesn't work inside VirtualBox shared folders. This means that
