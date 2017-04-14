@@ -1,0 +1,8 @@
+[run]
+omit = */env/*
+data_file = .coverage
+
+[report]
+omit = 
+    */env/*
+    */.tox/*
