@@ -54,8 +54,21 @@ from nocexec.exception import SSHClientError, TelnetClientError, \
 
 LOG = logging.getLogger('nocexec')
 
+__all__ = ['TelnetClient', 'SSHClient', 'NetConfClient']
 
-class TelnetClient(object):  # pylint: disable=too-few-public-methods
+
+class ContextClient(object):  # pylint: disable=too-few-public-methods
+    """Context manager class for all clients and drivers"""
+
+    def __enter__(self):
+        self.connect()  # pylint: disable=no-member
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.disconnect()  # pylint: disable=no-member
+
+
+class TelnetClient(ContextClient):  # pylint: disable=too-few-public-methods
     """
     A client class for connecting to devices using the telnet protocol and
     executing commands.
@@ -63,7 +76,7 @@ class TelnetClient(object):  # pylint: disable=too-few-public-methods
     pass
 
 
-class SSHClient(object):
+class SSHClient(ContextClient):
     """
     A client class for connecting to devices using the SSH protocol and
     executing commands.
@@ -71,10 +84,12 @@ class SSHClient(object):
         :param device: domain or ip address of device (default: "")
         :param login: username for authorization on device (default: "")
         :param password: password for authorization on device (default: "")
+        :param port: SSH port for connection
         :param timeout: timeout waiting for connection (default: 5)
         :type device: string
         :type login: string
         :type password: string
+        :type port: int
         :type timeout: int
 
     :Example:
@@ -91,22 +106,16 @@ class SSHClient(object):
         raises exceptions inherited from SSHClientError exception
     """
 
-    def __init__(self, device="", login="", password="", timeout=5):
+    def __init__(self, device="", login="", password="", port=22, timeout=5):  # pylint: disable=too-many-arguments
         self.ssh_options = {"UserKnownHostsFile": "/dev/null",
                             "StrictHostKeyChecking": "no",
                             "PubkeyAuthentication": "no"}
         self.device = device
+        self.port = port
         self.login = login
         self.password = password
         self.timeout = timeout
-        self.cli = None
-
-    def __enter__(self):
-        self.connect()
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.disconnect()
+        self.connection = None
 
     def disconnect(self):
         """
@@ -115,7 +124,7 @@ class SSHClient(object):
         .. note::
             not raises exceptions.
         """
-        self.cli.close()
+        self.connection.close()
 
     def connect(self):
         """
@@ -126,20 +135,21 @@ class SSHClient(object):
         """
         opts = " ".join(["-o%s=%s" % (k, v)
                          for k, v in self.ssh_options.items()])
-        conn_cmd = 'ssh {0} {1}@{2}'.format(opts, self.login, self.device)
-        self.cli = pexpect.spawn(conn_cmd, timeout=self.timeout)
+        conn_cmd = 'ssh {0} -p {1} {2}@{3}'.format(
+            opts, self.port, self.login, self.device)
+        self.connection = pexpect.spawn(conn_cmd, timeout=self.timeout)
         LOG.debug("SSH client command: %s", conn_cmd)
-        if self.cli is None:
+        if self.connection is None:
             LOG.error("SSH spawn error to host %s", self.device)
             raise SSHClientError(
                 "SSH spawn error to host {0}".format(self.device))
-        answ = self.cli.expect(['.?assword.*:',
-                                pexpect.EOF, pexpect.TIMEOUT])
+        answ = self.connection.expect(['.?assword.*:',
+                                       pexpect.EOF, pexpect.TIMEOUT])
         # Catch password request
         if answ == 0:
-            self.cli.sendline(self.password)
-            answ = self.cli.expect(['>', '#', 'Permission denied',
-                                    pexpect.EOF, pexpect.TIMEOUT])
+            self.connection.sendline(self.password)
+            answ = self.connection.expect(['>', '#', 'Permission denied',
+                                           pexpect.EOF, pexpect.TIMEOUT])
             # Check promt
             if not answ > 1:
                 LOG.debug("Connect and login successful on %s", self.device)
@@ -162,7 +172,7 @@ class SSHClient(object):
 
     def execute(self, command, wait=None, timeout=10):
         """
-        Execute the command on the device with the expected result and error
+        Running a command on the device with the expected result and error
         handling.
 
             :param command: sent command
@@ -183,8 +193,11 @@ class SSHClient(object):
         if isinstance(wait, list):
             ex = wait + ex
         LOG.debug("execute command '%s'", command)
-        self.cli.sendline(command)
-        answ = self.cli.expect(ex, timeout=timeout)
+        self.connection.sendline(command)
+        answ = self.connection.expect(ex, timeout=timeout)
+        LOG.debug("expect (regex): %s", ex)
+        before = self.connection.before.splitlines()
+        LOG.debug("lines before expect: %s", before)
         # Catch EOF
         if answ == len(ex) - 1:
             LOG.error("execute command '%s' EOF error", command)
@@ -195,7 +208,7 @@ class SSHClient(object):
             LOG.error("execute command '%s' timeout", command)
             raise SSHClientExecuteCmdError(
                 "Execute command '{0}' timeout".format(command))
-        return self.cli.before.splitlines()
+        return before
 
     def send(self, command):
         """
@@ -209,10 +222,10 @@ class SSHClient(object):
             not raises exceptions.
         """
         LOG.debug("send command '%s'", command)
-        self.cli.sendline(command)
+        self.connection.sendline(command)
 
 
-class NetConfClient(object):  # pylint: disable=too-many-instance-attributes
+class NetConfClient(ContextClient):  # pylint: disable=too-many-instance-attributes
     """
     A client class for connecting to devices using the NetConf protocol
     (RFC6241) and executing commands.
@@ -264,7 +277,7 @@ class NetConfClient(object):  # pylint: disable=too-many-instance-attributes
         self.login = login
         self.password = password
         self.timeout = timeout
-        self.cli = None
+        self.connection = None
         self.exclusive = exclusive
         self._configuration_lock = False
         self.device_params = device_params or {'name': 'junos'}
@@ -274,13 +287,6 @@ class NetConfClient(object):  # pylint: disable=too-many-instance-attributes
                 "statement not found",
                 # clear not exist entry
                 "no entry for"]
-
-    def __enter__(self):
-        self.connect()
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.disconnect()
 
     def _ignored_rpc_error(self, error):
         """
@@ -308,7 +314,7 @@ class NetConfClient(object):  # pylint: disable=too-many-instance-attributes
         """
         if self.exclusive:
             self.unlock()
-        self.cli.close_session()
+        self.connection.close_session()
 
     def connect(self):
         """
@@ -319,13 +325,13 @@ class NetConfClient(object):  # pylint: disable=too-many-instance-attributes
             occurs.
         """
         try:
-            self.cli = manager.connect(host=self.device,
-                                       port=22,
-                                       username=self.login,
-                                       password=self.password,
-                                       timeout=self.timeout,
-                                       device_params=self.device_params,
-                                       hostkey_verify=False)
+            self.connection = manager.connect(host=self.device,
+                                              port=22,
+                                              username=self.login,
+                                              password=self.password,
+                                              timeout=self.timeout,
+                                              device_params=self.device_params,
+                                              hostkey_verify=False)
         except AuthenticationError:
             LOG.error("authentication failed on '%s'", self.device)
             raise NetConfClientError(
@@ -334,7 +340,7 @@ class NetConfClient(object):  # pylint: disable=too-many-instance-attributes
             LOG.error("connection to '%s' error: %s", self.device, err)
             raise NetConfClientError(
                 "Connection to '{0}' error: {1}".format(self.device, err))
-        if self.cli is None:
+        if self.connection is None:
             LOG.error("connection to '%s' error: manager return "
                       "None object", self.device)
             raise NetConfClientError("Connection to '{0}' error: manager "
@@ -358,9 +364,9 @@ class NetConfClient(object):  # pylint: disable=too-many-instance-attributes
         """
         try:
             if action == "unlock":
-                lock_res = self.cli.unlock()
+                lock_res = self.connection.unlock()
             else:
-                lock_res = self.cli.lock()
+                lock_res = self.connection.lock()
             if lock_res.xpath('//ok'):
                 self._configuration_lock = not self._configuration_lock
                 LOG.debug("%s configuration on '%s'", action, self.device)
@@ -425,7 +431,7 @@ class NetConfClient(object):  # pylint: disable=too-many-instance-attributes
         """
         LOG.debug("execute edit command '%s'", command)
         try:
-            result = self.cli.load_configuration(
+            result = self.connection.load_configuration(
                 action='set', config=[command])
             if tostring:
                 return result.tostring
@@ -456,8 +462,8 @@ class NetConfClient(object):  # pylint: disable=too-many-instance-attributes
         LOG.debug("execute view command '%s'", command)
         try:
             if tostring:
-                return self.cli.command(command).tostring
-            return self.cli.command(command)
+                return self.connection.command(command).tostring
+            return self.connection.command(command)
         except RPCError as err:
             if self._ignored_rpc_error(err):
                 LOG.info("catch skiped RCP error: %s", str(err))
@@ -475,7 +481,7 @@ class NetConfClient(object):  # pylint: disable=too-many-instance-attributes
         :returns: differences between versions in unix diff format
         :rtype: string or None (if no differences)
         """
-        result = self.cli.compare_configuration(version).xpath(
+        result = self.connection.compare_configuration(version).xpath(
             '//configuration-information/configuration-output')
         if result[0].text and result[0].text.rstrip() != '':
             return result[0].text
@@ -492,7 +498,7 @@ class NetConfClient(object):  # pylint: disable=too-many-instance-attributes
                 False, if errors occur
         """
         try:
-            commit_res = self.cli.commit()
+            commit_res = self.connection.commit()
             if commit_res.xpath('//ok'):
                 return True
         except RPCError as err:
@@ -510,9 +516,16 @@ class NetConfClient(object):  # pylint: disable=too-many-instance-attributes
                 False, if errors occur
         """
         try:
-            self.cli.validate()
+            self.connection.validate()
             return True
         except RPCError as err:
             LOG.error("configuration check on '%s' error: %s",
                       self.device, str(err))
             return False
+
+# pylint: disable=invalid-name
+protocols = {
+    "ssh": SSHClient,
+    "telnet": TelnetClient,
+    "netconf": NetConfClient
+}

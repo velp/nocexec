@@ -44,7 +44,7 @@ class TestSSHClient(unittest.TestCase):
                            login="user",
                            password="pass")
         # mocking pexpect
-        self.c.cli = mock.Mock()
+        self.c.connection = mock.Mock()
 
     @mock.patch('nocexec.SSHClient.connect')
     @mock.patch('nocexec.SSHClient.disconnect')
@@ -56,13 +56,13 @@ class TestSSHClient(unittest.TestCase):
 
     def test_disconnect(self):
         self.c.disconnect()
-        self.c.cli.close.assert_called_with()
+        self.c.connection.close.assert_called_with()
 
     @mock.patch('pexpect.spawn')
     def test_connect(self, mock_spawn):
         opts = " ".join(["-o%s=%s" % (k, v)
                          for k, v in self.c.ssh_options.items()])
-        cmd = 'ssh {0} user@test'.format(opts)
+        cmd = 'ssh {0} -p 22 user@test'.format(opts)
         # Check normal connect
         mock_spawn.return_value.expect.return_value = 0
         self.c.connect()
@@ -71,7 +71,7 @@ class TestSSHClient(unittest.TestCase):
         # check enter password
         mock_spawn.return_value.sendline.assert_called_with("pass")
         # check result
-        self.assertEqual(self.c.cli, mock_spawn.return_value)
+        self.assertEqual(self.c.connection, mock_spawn.return_value)
         # Check welcome expect errors
         for code in [1, 2]:
             mock_spawn.return_value.expect.return_value = code
@@ -86,32 +86,32 @@ class TestSSHClient(unittest.TestCase):
         mock_spawn.return_value = None
         with self.assertRaises(SSHClientError) as err:
             self.c.connect()
-        self.assertEqual(self.c.cli, None)
+        self.assertEqual(self.c.connection, None)
         self.assertIn("SSH spawn error to host test", str(err.exception))
 
     def test_execute(self):
-        self.c.cli.before.splitlines.return_value = ["line0", "line1"]
+        self.c.connection.before.splitlines.return_value = ["line0", "line1"]
         res = self.c.execute(command="test", wait=["#"])
-        self.c.cli.sendline.assert_called_with("test")
-        self.c.cli.expect.assert_called_with(
+        self.c.connection.sendline.assert_called_with("test")
+        self.c.connection.expect.assert_called_with(
             ["#", pexpect.TIMEOUT, pexpect.EOF], timeout=10)
         self.assertEqual(len(res), 2)
         for indx in [0, 1]:
             self.assertEqual(res[indx], "line%s" % indx)
         # check expect EOF
-        self.c.cli.expect.return_value = 1
+        self.c.connection.expect.return_value = 1
         with self.assertRaises(SSHClientExecuteCmdError) as err:
             self.c.execute(command="test")
         self.assertIn("Execute command 'test' EOF error", str(err.exception))
         # check expect timeout
-        self.c.cli.expect.return_value = 0
+        self.c.connection.expect.return_value = 0
         with self.assertRaises(SSHClientExecuteCmdError) as err:
             self.c.execute(command="test")
         self.assertIn("Execute command 'test' timeout", str(err.exception))
 
     def test_send(self):
         self.c.send("test")
-        self.c.cli.sendline.assert_called_with("test")
+        self.c.connection.sendline.assert_called_with("test")
 
 
 class TestNetConfClient(unittest.TestCase):
@@ -121,7 +121,7 @@ class TestNetConfClient(unittest.TestCase):
                                login="user",
                                password="pass")
         # mocking pexpect
-        self.c.cli = mock.Mock()
+        self.c.connection = mock.Mock()
         # for xml
         device_handler = ncclient.manager.make_device_handler(
             {'name': 'junos'})
@@ -139,7 +139,7 @@ class TestNetConfClient(unittest.TestCase):
 
     def test_disconnect(self):
         self.c.disconnect()
-        self.c.cli.close_session.assert_called_with()
+        self.c.connection.close_session.assert_called_with()
 
     def test_ignored_rpc_error(self):
         self.assertTrue(self.c._ignored_rpc_error(
@@ -172,12 +172,12 @@ class TestNetConfClient(unittest.TestCase):
     def test_locking(self):
 
         # check lock
-        self.c.cli.lock.return_value = NCElement(
+        self.c.connection.lock.return_value = NCElement(
             good_reply, self.tr)
         self.assertTrue(self.c._locking("lock"))
         self.assertTrue(self.c._configuration_lock)
         # check unlock
-        self.c.cli.unlock.return_value = NCElement(
+        self.c.connection.unlock.return_value = NCElement(
             good_reply, self.tr)
         self.assertTrue(self.c._locking("unlock"))
         self.assertFalse(self.c._configuration_lock)
@@ -185,16 +185,16 @@ class TestNetConfClient(unittest.TestCase):
         self.assertTrue(self.c._locking("test"))
         self.assertTrue(self.c._configuration_lock)
         # bad RCP reply lock
-        self.c.cli.lock.return_value = NCElement(bad_reply, self.tr)
+        self.c.connection.lock.return_value = NCElement(bad_reply, self.tr)
         self.assertFalse(self.c._locking("lock"))
         # bad RCP reply unlock
-        self.c.cli.unlock.return_value = NCElement(
+        self.c.connection.unlock.return_value = NCElement(
             bad_reply, self.tr)
         self.assertFalse(self.c._locking("unlock"))
         # check RPCError
-        self.c.cli.lock.side_effect = RPCError(mock.MagicMock())
+        self.c.connection.lock.side_effect = RPCError(mock.MagicMock())
         self.assertFalse(self.c._locking("lock"))
-        self.c.cli.unlock.side_effect = RPCError(mock.MagicMock())
+        self.c.connection.unlock.side_effect = RPCError(mock.MagicMock())
         self.assertFalse(self.c._locking("unlock"))
 
     @mock.patch('nocexec.NetConfClient._locking')
@@ -218,7 +218,7 @@ class TestNetConfClient(unittest.TestCase):
         mock_locking.assert_called_with(action="unlock")
 
     def test_edit(self):
-        mock_lc = self.c.cli.load_configuration
+        mock_lc = self.c.connection.load_configuration
         self.assertEqual(self.c.edit("test"), mock_lc.return_value)
         mock_lc.assert_called_with(action='set', config=["test"])
         # check tostring
@@ -238,7 +238,7 @@ class TestNetConfClient(unittest.TestCase):
             mock_ig.assert_called_with(mock_lc.side_effect)
 
     def test_view(self):
-        mock_cmd = self.c.cli.command
+        mock_cmd = self.c.connection.command
         self.assertEqual(self.c.view("test"), mock_cmd.return_value)
         # check tostring
         mock_cmd.return_value = mock.Mock()
@@ -257,7 +257,7 @@ class TestNetConfClient(unittest.TestCase):
             mock_ig.assert_called_with(mock_cmd.side_effect)
 
     def test_compare(self):
-        mock_compare = self.c.cli.compare_configuration
+        mock_compare = self.c.connection.compare_configuration
         mock_compare.return_value = NCElement(comp_reply, self.tr)
         self.assertEqual(self.c.compare().replace(" ", ""), "\ntest\n")
         mock_compare.assert_called_with(0)
@@ -270,7 +270,7 @@ class TestNetConfClient(unittest.TestCase):
         self.assertEqual(self.c.compare(), None)
 
     def test_commit(self):
-        mock_commit = self.c.cli.commit
+        mock_commit = self.c.connection.commit
         mock_commit.return_value = NCElement(good_reply, self.tr)
         self.assertTrue(self.c.commit())
         # bad reply
@@ -281,7 +281,7 @@ class TestNetConfClient(unittest.TestCase):
         self.assertFalse(self.c.commit())
 
     def test_validate(self):
-        mock_validate = self.c.cli.validate
+        mock_validate = self.c.connection.validate
         self.assertTrue(self.c.validate())
         mock_validate.assert_called_with()
         # RPC error
