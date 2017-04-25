@@ -39,6 +39,7 @@ class SSHClientExecuteCmdError(SSHClientError):
     """
     pass
 
+
 class TelnetClientExecuteCmdError(TelnetClientError):
     """
     The exception class for errors that occurred during the execution of

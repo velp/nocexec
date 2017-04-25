@@ -106,7 +106,8 @@ class SSHClient(ContextClient):
         raises exceptions inherited from SSHClientError exception
     """
 
-    def __init__(self, device="", login="", password="", port=22, timeout=5):  # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments
+    def __init__(self, device="", login="", password="", port=22, timeout=5):
         self.ssh_options = {"UserKnownHostsFile": "/dev/null",
                             "StrictHostKeyChecking": "no",
                             "PubkeyAuthentication": "no"}
@@ -225,7 +226,8 @@ class SSHClient(ContextClient):
         self.connection.sendline(command)
 
 
-class NetConfClient(ContextClient):  # pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-instance-attributes
+class NetConfClient(ContextClient):
     """
     A client class for connecting to devices using the NetConf protocol
     (RFC6241) and executing commands.

@@ -150,9 +150,9 @@ class XOS(NOCExecDriver):  # pylint: disable=too-many-instance-attributes
         if self.cli is None:
             return False
         try:
-            ask = "Do you want to save configuration to primary.cfg and overwrite it?"
             self.cli.execute(command="save configuration primary",
-                             wait=[ask])
+                             wait=["Do you want to save configuration to "
+                                   "primary.cfg and overwrite it?"])
             self.cli.execute(command="Yes", wait=["Configuration saved to "
                                                   "primary.cfg successfully."])
             return True

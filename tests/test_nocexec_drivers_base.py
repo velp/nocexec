@@ -10,6 +10,8 @@ except ImportError:  # pragma: no cover
 from nocexec import SSHClient
 from nocexec.drivers.base import NOCExecDriver
 
+# pylint: disable=invalid-name,missing-docstring,protected-access
+
 
 class TestNOCExecDriver(unittest.TestCase):
 
@@ -34,7 +36,7 @@ class TestNOCExecDriver(unittest.TestCase):
         self.c.cli = self.c._protocol.return_value
 
     def test_disconnect(self):
-        self.c.disconnect() # cli now is None
+        self.c.disconnect()  # cli now is None
         self.c.cli = mock.Mock()
         self.c.disconnect()
         self.c.cli.disconnect.assert_called_with()

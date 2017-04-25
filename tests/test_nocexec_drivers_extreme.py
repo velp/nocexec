@@ -1,5 +1,5 @@
 """
-Tests for module nocexec.drivers.base
+Tests for module nocexec.drivers.extreme
 """
 
 import unittest
@@ -7,12 +7,10 @@ try:
     from unittest import mock
 except ImportError:  # pragma: no cover
     import mock
-from nocexec import SSHClient
 from nocexec.drivers.extreme import XOS, XOSError, XOSCommandError
-from nocexec.exception import SSHClientError, TelnetClientError, \
-    SSHClientExecuteCmdError, TelnetClientExecuteCmdError
+from nocexec.exception import SSHClientError, SSHClientExecuteCmdError
 
-
+# pylint: disable=invalid-name,missing-docstring,protected-access
 invalid_input = [' asdasdasd', '', '\x07        ^',
                  '', "%% Invalid input detected at '^' marker.", '']
 error_input = [' create vlan Test tag 11', '',

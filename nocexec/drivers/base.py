@@ -7,12 +7,14 @@ import nocexec
 __all__ = ['NOCExecDriver']
 
 
-class NOCExecDriver(nocexec.ContextClient):  # pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-instance-attributes
+class NOCExecDriver(nocexec.ContextClient):
     """
     Parent driver class from which other drivers are inherited
     """
 
-    def __init__(self, device, login="", password="", port=22, timeout=5,  # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments
+    def __init__(self, device, login="", password="", port=22, timeout=5,
                  protocol="ssh"):
         self._device = device
         self._login = login

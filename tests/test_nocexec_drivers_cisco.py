@@ -1,5 +1,5 @@
 """
-Tests for module nocexec.drivers.base
+Tests for module nocexec.drivers.cisco
 """
 
 import unittest
@@ -7,10 +7,10 @@ try:
     from unittest import mock
 except ImportError:  # pragma: no cover
     import mock
-from nocexec import SSHClient
 from nocexec.drivers.cisco import IOS, IOSError, IOSCommandError
-from nocexec.exception import SSHClientError, TelnetClientError, \
-    SSHClientExecuteCmdError, TelnetClientExecuteCmdError
+from nocexec.exception import SSHClientError, SSHClientExecuteCmdError
+
+# pylint: disable=invalid-name,missing-docstring,protected-access
 
 
 class TestIOS(unittest.TestCase):
@@ -31,7 +31,7 @@ class TestIOS(unittest.TestCase):
         mock_expect.assert_called_with(['>', '#'])
         self.assertEqual(self.c._hostname, "hostname")
         self.assertEqual(self.c._shell_prompt, "hostname#")
-        self.assertEqual(self.c._config_prompt, "hostname\(config.*?\)#")
+        self.assertEqual(self.c._config_prompt, r"hostname\(config.*?\)#")
         self.assertEqual(self.c._priv_mode, bool(mock_expect.return_value))
 
     # Test connection error
@@ -64,7 +64,7 @@ class TestIOS(unittest.TestCase):
     def test_enter_config(self, mock_priv):
         self.assertTrue(self.c._enter_config())
         self.c.cli.execute.assert_called_with(
-            'configure terminal', wait=['\\(config.*?\\)#'])
+            'configure terminal', wait=[r'\(config.*?\)#'])
         # error execute
         self.c._priv_mode = True
         self.c._config_mode = False
@@ -97,7 +97,7 @@ class TestIOS(unittest.TestCase):
         self.c.cli.execute.return_value = ["l1", "l2"]
         self.assertEqual(self.c.edit("test"), ["l1", "l2"])
         self.c.cli.execute.assert_called_with(
-            command='test', wait=['\\(config.*?\\)#'])
+            command='test', wait=[r'\(config.*?\)#'])
         # command error
         self.c.cli.execute.side_effect = SSHClientExecuteCmdError("error")
         with self.assertRaises(IOSCommandError):
