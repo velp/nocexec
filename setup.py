@@ -23,7 +23,7 @@ if os.path.abspath(__file__).split(os.path.sep)[1] == 'vagrant':
 
 setup(
     name="NOCExec",
-    version="0.1a",
+    version="0.2a",
     packages=["nocexec"],
     author="Vadim Ponomarev",
     author_email="velizarx@gmail.com",
