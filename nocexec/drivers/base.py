@@ -23,13 +23,8 @@ class NOCExecDriver(nocexec.ContextClient):  # pylint: disable=too-many-instance
         self._hostname = device
         self.cli = None
 
-    def connect(self):
-        """
-        Connection to the device via the specified protocol.
-
-        .. note::
-            raises an exception IOSError if a connection error occurs.
-        """
+    def init_client(self):
+        """Initialize client for protocol"""
         self.cli = self._protocol(device=self._device,
                                   login=self._login,
                                   password=self._password,
@@ -37,11 +32,6 @@ class NOCExecDriver(nocexec.ContextClient):  # pylint: disable=too-many-instance
                                   timeout=self._timeout)
 
     def disconnect(self):
-        """
-        Close connection.
-
-        .. note::
-            not raises exceptions.
-        """
+        """Close the connection if the client is initialized."""
         if self.cli is not None:
             self.cli.disconnect()
