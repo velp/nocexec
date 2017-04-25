@@ -8,7 +8,7 @@ import sys
 import os
 from setuptools import setup
 
-if sys.version_info < (2, 6):
+if sys.version_info < (2, 7):
     raise Exception("NOCExec requires Python 2.7 or higher.")
 
 # Hard linking doesn't work inside VirtualBox shared folders. This means that
@@ -23,7 +23,7 @@ if os.path.abspath(__file__).split(os.path.sep)[1] == 'vagrant':
 
 setup(
     name="NOCExec",
-    version="0.1a",
+    version="0.2a",
     packages=["nocexec"],
     author="Vadim Ponomarev",
     author_email="velizarx@gmail.com",
@@ -41,7 +41,7 @@ setup(
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 3',
         'Topic :: System :: Networking',
-        'Topic :: System :: Systems Administratio',
+        'Topic :: System :: Systems Administration',
         'Topic :: Software Development :: Libraries :: Python Modules'
     ],
     install_requires=["pexpect", "ncclient>=0.5"],
