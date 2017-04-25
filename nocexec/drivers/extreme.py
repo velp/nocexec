@@ -105,7 +105,7 @@ class XOS(NOCExecDriver):  # pylint: disable=too-many-instance-attributes
         this function is a wrapper over the view() function for driver
         compatibility.
         """
-        self.view(command)
+        return self.view(command)
 
     def view(self, command):
         """
