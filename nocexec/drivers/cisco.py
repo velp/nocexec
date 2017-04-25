@@ -132,7 +132,7 @@ class IOS(NOCExecDriver):  # pylint: disable=too-many-instance-attributes
         .. note::
             raises an exception IOSError if a connection error occurs.
         """
-        super(IOS, self).connect()
+        super(IOS, self).init_client()
         try:
             self.cli.connect()
         except (SSHClientError, TelnetClientError) as err:

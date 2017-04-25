@@ -92,7 +92,7 @@ class XOS(NOCExecDriver):  # pylint: disable=too-many-instance-attributes
         .. note::
             raises an exception XOSError if a connection error occurs.
         """
-        super(XOS, self).connect()
+        super(XOS, self).init_client()
         try:
             self.cli.connect()
         except (SSHClientError, TelnetClientError) as err:
