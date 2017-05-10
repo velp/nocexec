@@ -16,8 +16,12 @@ from nocexec.exception import NetConfClientError, NetConfClientExecuteCmdError
 class TestJunOS(unittest.TestCase):
 
     def setUp(self):
-        self.c = JunOS(device="d")
+        self.c = JunOS(device="d", protocol="netconf")
         self.c.cli = mock.MagicMock()
+
+    def test_init(self):
+        with self.assertRaises(JunOSError):
+            JunOS(device="d", protocol="bad_proto")
 
     @mock.patch('nocexec.NetConfClient.__init__', return_value=None)
     @mock.patch('nocexec.NetConfClient.connect')

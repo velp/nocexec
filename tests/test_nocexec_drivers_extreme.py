@@ -24,6 +24,10 @@ class TestXOS(unittest.TestCase):
         self.c = XOS(device="d")
         self.c.cli = mock.MagicMock()
 
+    def test_init(self):
+        with self.assertRaises(XOSError):
+            XOS(device="d", protocol="bad_proto")
+
     @mock.patch('nocexec.drivers.base.NOCExecDriver.init_client')
     def test_connect(self, mock_init_client):
         mock_sendline = self.c.cli.connection.sendline

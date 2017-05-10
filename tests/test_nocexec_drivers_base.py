@@ -8,7 +8,7 @@ try:
 except ImportError:  # pragma: no cover
     import mock
 from nocexec import SSHClient
-from nocexec.drivers.base import NOCExecDriver
+from nocexec.drivers.base import NOCExecDriver, NOCExecDriverError
 
 # pylint: disable=invalid-name,missing-docstring,protected-access
 
@@ -16,7 +16,7 @@ from nocexec.drivers.base import NOCExecDriver
 class TestNOCExecDriver(unittest.TestCase):
 
     def setUp(self):
-        self.c = NOCExecDriver(device="d")
+        self.c = NOCExecDriver(device="d", driver_protocols=["ssh", "telnet"])
 
     def test_init(self):
         self.assertEqual(self.c._device, "d")
@@ -27,6 +27,8 @@ class TestNOCExecDriver(unittest.TestCase):
         self.assertEqual(self.c._protocol, SSHClient)
         self.assertEqual(self.c._hostname, "d")
         self.assertEqual(self.c.cli, None)
+        with self.assertRaises(NOCExecDriverError):
+            NOCExecDriver(device="d", driver_protocols=[], protocol="ssh")
 
     def test_init_client(self):
         self.c._protocol = mock.Mock()

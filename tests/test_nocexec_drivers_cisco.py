@@ -19,6 +19,10 @@ class TestIOS(unittest.TestCase):
         self.c = IOS(device="d")
         self.c.cli = mock.MagicMock()
 
+    def test_init(self):
+        with self.assertRaises(IOSError):
+            IOS(device="d", protocol="bad_proto")
+
     @mock.patch('nocexec.drivers.base.NOCExecDriver.init_client')
     def test_connect(self, mock_init_client):
         mock_sendline = self.c.cli.connection.sendline

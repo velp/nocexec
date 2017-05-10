@@ -4,7 +4,7 @@ Driver classes for Juniper devices.
   - JunOS - driver for Juniper JunOS operating system
 """
 import logging
-from nocexec.drivers.base import NOCExecDriver
+from nocexec.drivers.base import NOCExecDriver, NOCExecDriverError
 from nocexec.exception import NOCExecError, NetConfClientError, \
     NetConfClientExecuteCmdError
 
@@ -60,7 +60,11 @@ class JunOS(NOCExecDriver):
     """
 
     def __init__(self, *args, **kwargs):  # pylint: disable=too-many-arguments
-        super(JunOS, self).__init__(protocol="netconf", *args, **kwargs)
+        try:
+            super(JunOS, self).__init__(driver_protocols=["netconf"],
+                                        *args, **kwargs)
+        except NOCExecDriverError as err:
+            raise JunOSError(err)
 
     def connect(self):
         """

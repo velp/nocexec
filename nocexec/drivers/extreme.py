@@ -7,7 +7,7 @@ Driver classes for Extreme networks devices.
 
 import logging
 import re
-from nocexec.drivers.base import NOCExecDriver
+from nocexec.drivers.base import NOCExecDriver, NOCExecDriverError
 from nocexec.exception import SSHClientError, TelnetClientError, \
     NOCExecError, SSHClientExecuteCmdError, TelnetClientExecuteCmdError
 
@@ -65,7 +65,11 @@ class XOS(NOCExecDriver):  # pylint: disable=too-many-instance-attributes
     """
 
     def __init__(self, *args, **kwargs):
-        super(XOS, self).__init__(*args, **kwargs)
+        try:
+            super(XOS, self).__init__(driver_protocols=["ssh"],
+                                      *args, **kwargs)
+        except NOCExecDriverError as err:
+            raise XOSError(err)
         self._cmd_num = 2
         self._last_cmd = ""
 

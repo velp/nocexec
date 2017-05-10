@@ -5,7 +5,7 @@ Driver classes for cisco devices.
 """
 
 import logging
-from nocexec.drivers.base import NOCExecDriver
+from nocexec.drivers.base import NOCExecDriver, NOCExecDriverError
 from nocexec.exception import SSHClientError, TelnetClientError, \
     NOCExecError, SSHClientExecuteCmdError, TelnetClientExecuteCmdError
 
@@ -65,7 +65,11 @@ class IOS(NOCExecDriver):  # pylint: disable=too-many-instance-attributes
     """
 
     def __init__(self, *args, **kwargs):
-        super(IOS, self).__init__(*args, **kwargs)
+        try:
+            super(IOS, self).__init__(driver_protocols=["ssh"],
+                                      *args, **kwargs)
+        except NOCExecDriverError as err:
+            raise IOSError(err)
         self._shell_prompt = "#"
         self._config_prompt = r"\(config.*?\)#"
         self._priv_mode = False
