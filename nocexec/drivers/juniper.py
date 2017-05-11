@@ -98,16 +98,15 @@ class JunOS(NOCExecDriver):
             self.cli.unlock()
             self.cli.disconnect()
 
-    def edit(self, command, tostring=False):
+    def edit(self, command, **kwargs):
         """
         Running a command on the Juniper JunOS device in configuration mode
         with the expected result and error handling.
 
             :param command: sent command
-            :param tostring: enable or disable converting to
-                             string (default: False)
+            :param kwargs: arguments for client.execute() function
             :type command: string
-            :type tostring: bool
+            :type kwargs: dict
             :returns: result of the command execution
             :rtype: list of lines or etree Element (if tostring == False)
 
@@ -119,21 +118,20 @@ class JunOS(NOCExecDriver):
         if self.cli is None:
             raise JunOSError("no connection to the device")
         try:
-            result = self.cli.edit(command=command, tostring=tostring)
+            result = self.cli.edit(command=command, **kwargs)
         except NetConfClientExecuteCmdError as err:
             raise JunOSCommandError(err)
         return result
 
-    def view(self, command, tostring=False):
+    def view(self, command, **kwargs):
         """
         Running a command on the Juniper JunOS device in view mode
         with the expected result and error handling.
 
             :param command: sent command
-            :param tostring: enable or disable converting to
-                             string (default: False)
+            :param kwargs: arguments for client.execute() function
             :type command: string
-            :type tostring: bool
+            :type kwargs: dict
             :returns: result of the command execution
             :rtype: list of lines or etree Element (if tostring == False)
 
@@ -145,7 +143,7 @@ class JunOS(NOCExecDriver):
         if self.cli is None:
             raise JunOSError("no connection to the device")
         try:
-            result = self.cli.view(command=command, tostring=tostring)
+            result = self.cli.view(command=command, **kwargs)
         except NetConfClientExecuteCmdError as err:
             raise JunOSCommandError(err)
         return result

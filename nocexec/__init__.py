@@ -46,7 +46,7 @@
 
 import logging
 import pexpect
-from ncclient import manager
+from ncclient import manager as ncc_mngr
 from ncclient.transport.errors import TransportError, AuthenticationError
 from ncclient.operations.rpc import RPCError
 from nocexec.exception import SSHClientError, TelnetClientError, \
@@ -110,6 +110,8 @@ class SSHClient(ContextClient):
     def __init__(self, device="", login="", password="", port=22, timeout=5):
         self.ssh_options = {"UserKnownHostsFile": "/dev/null",
                             "StrictHostKeyChecking": "no",
+                            #"KexAlgorithms": "+diffie-hellman-group1-sha1",
+                            #"HostKeyAlgorithms": "+ssh-dss",
                             "PubkeyAuthentication": "no"}
         self.device = device
         self.port = port
@@ -327,13 +329,13 @@ class NetConfClient(ContextClient):
             occurs.
         """
         try:
-            self.connection = manager.connect(host=self.device,
-                                              port=22,
-                                              username=self.login,
-                                              password=self.password,
-                                              timeout=self.timeout,
-                                              device_params=self.device_params,
-                                              hostkey_verify=False)
+            self.connection = ncc_mngr.connect(host=self.device,
+                                               port=22,
+                                               username=self.login,
+                                               password=self.password,
+                                               timeout=self.timeout,
+                                               device_params=self.device_params,
+                                               hostkey_verify=False)
         except AuthenticationError:
             LOG.error("authentication failed on '%s'", self.device)
             raise NetConfClientError(
@@ -418,7 +420,8 @@ class NetConfClient(ContextClient):
             return True
         return self._locking(action="unlock")
 
-    def edit(self, command, tostring=False):
+    # pylint: disable=unused-argument
+    def edit(self, command, tostring=False, **kwargs):
         """
         Run the command on the device with the configuration change (edit
         command).
@@ -448,7 +451,8 @@ class NetConfClient(ContextClient):
                                                "'{0}' error: "
                                                "{1}".format(command, err))
 
-    def view(self, command, tostring=False):
+    # pylint: disable=unused-argument
+    def view(self, command, tostring=False, **kwargs):
         """
         Run the command on the device without the configuration change (view
         command).

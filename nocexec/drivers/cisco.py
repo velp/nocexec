@@ -143,14 +143,16 @@ class IOS(NOCExecDriver):  # pylint: disable=too-many-instance-attributes
             raise IOSError(err)
         self._prepare_shell()
 
-    def edit(self, command):
+    def edit(self, command, **kwargs):
         """
         Running a command on the Cisco IOS device in configuration mode with
         the expected result and error handling. Before executing the command,
         the access level is checked and the configuration mode is enabled.
 
             :param command: sent command
+            :param kwargs: arguments for client.execute() function
             :type command: string
+            :type kwargs: dict
             :returns: list of lines with the result of the command execution
             :rtype: list of lines
 
@@ -165,19 +167,21 @@ class IOS(NOCExecDriver):  # pylint: disable=too-many-instance-attributes
             raise IOSCommandError("can not enter configuration mode")
         try:
             result = self.cli.execute(
-                command=command, wait=[self._config_prompt])
+                command=command, wait=[self._config_prompt], **kwargs)
         except (SSHClientExecuteCmdError, TelnetClientExecuteCmdError) as err:
             raise IOSCommandError(err)
         return result
 
-    def view(self, command):
+    def view(self, command, **kwargs):
         """
         Running a command on the Cisco IOS device in view mode with
         the expected result and error handling. Before executing the command,
         the configuration mode is disabled.
 
             :param command: sent command
+            :param kwargs: arguments for client.execute() function
             :type command: string
+            :type kwargs: dict
             :returns: list of lines with the result of the command execution
             :rtype: list of lines
 
@@ -192,7 +196,7 @@ class IOS(NOCExecDriver):  # pylint: disable=too-many-instance-attributes
             raise IOSCommandError("can not exit the configuration mode")
         try:
             result = self.cli.execute(
-                command=command, wait=[self._shell_prompt])
+                command=command, wait=[self._shell_prompt], **kwargs)
         except (SSHClientExecuteCmdError, TelnetClientExecuteCmdError) as err:
             raise IOSCommandError(err)
         return result

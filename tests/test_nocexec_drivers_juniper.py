@@ -55,9 +55,9 @@ class TestJunOS(unittest.TestCase):
         result = cli_funct.return_value = mock.Mock()
         # test base call
         self.assertEqual(funct("test"), result)
-        cli_funct.assert_called_with(command="test", tostring=False)
+        cli_funct.assert_called_with(command="test")
         # test tostring
-        self.assertEqual(funct("test", True), result)
+        self.assertEqual(funct("test", tostring=True), result)
         cli_funct.assert_called_with(command="test", tostring=True)
         # test command error
         cli_funct.side_effect = NetConfClientExecuteCmdError("error")

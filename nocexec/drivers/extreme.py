@@ -103,21 +103,23 @@ class XOS(NOCExecDriver):  # pylint: disable=too-many-instance-attributes
             raise XOSError(err)
         self._prepare_shell()
 
-    def edit(self, command):
+    def edit(self, command, **kwargs):
         """
         Since there is no configuration mode in the Extreme networks devices,
         this function is a wrapper over the view() function for driver
         compatibility.
         """
-        return self.view(command)
+        return self.view(command, **kwargs)
 
-    def view(self, command):
+    def view(self, command, **kwargs):
         """
         Running a command on the extreme XOS device with the expected result
         and error handling.
 
             :param command: sent command
+            :param kwargs: arguments for client.execute() function
             :type command: string
+            :type kwargs: dict
             :returns: list of lines with the result of the command execution
             :rtype: list of lines
 
@@ -134,7 +136,8 @@ class XOS(NOCExecDriver):  # pylint: disable=too-many-instance-attributes
             self._last_cmd = command
         try:
             result = self.cli.execute(
-                command=command, wait=[shell_prompt.format(self._cmd_num)])
+                command=command, wait=[shell_prompt.format(self._cmd_num)],
+                **kwargs)
             if self._is_error(result):
                 raise XOSCommandError('\n'.join(result))
         except (SSHClientExecuteCmdError, TelnetClientExecuteCmdError) as err:
