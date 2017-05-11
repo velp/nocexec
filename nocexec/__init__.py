@@ -45,6 +45,7 @@
 """
 
 import logging
+from lxml import etree
 import pexpect
 from ncclient import manager as ncc_mngr
 from ncclient.transport.errors import TransportError, AuthenticationError
@@ -487,10 +488,21 @@ class NetConfClient(ContextClient):
         :returns: differences between versions in unix diff format
         :rtype: string or None (if no differences)
         """
-        result = self.connection.compare_configuration(version).xpath(
-            '//configuration-information/configuration-output')
-        if result[0].text and result[0].text.rstrip() != '':
-            return result[0].text
+        cmpr_conf = self.connection.compare_configuration(version)
+        xpathes = ['//configuration-information/configuration-output',
+                   '//configuration']  # for JunOS version > 15.1
+        changes = None
+        for path in xpathes:
+            result = cmpr_conf.xpath(path)
+            if result:
+                if len(result[0]) > 0:  # pylint: disable=len-as-condition
+                    # pylint: disable=no-member
+                    changes = etree.tostring(result[0])
+                else:
+                    changes = result[0].text
+                break
+        if changes and changes.replace('\n', '') != '':
+            return changes
         LOG.debug("running configuration and the candidate did not differ")
         return None
 

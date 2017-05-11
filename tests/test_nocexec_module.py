@@ -23,16 +23,18 @@ good_reply = """<rpc-reply message-id="urn:uuid:1">
 bad_reply = """<rpc-reply message-id="urn:uuid:1">
              </rpc-reply>"""
 comp_reply = """<rpc-reply message-id="urn:uuid:1">
-                  <configuration-information>
-                    <configuration-output>
-                      test
-                    </configuration-output>
-                  </configuration-information>
+                  <configuration>
+                    <interfaces>
+                      <interface operation="create">
+                        <name>ge-0/0/45</name>
+                        <description>storage50</description>
+                      </interface>
+                    </interfaces>
+                  </configuration>
                 </rpc-reply>"""
 empty_comp_reply = """<rpc-reply message-id="urn:uuid:1">
                         <configuration-information>
-                          <configuration-output>
-                          </configuration-output>
+                          <configuration-output></configuration-output>
                         </configuration-information>
                       </rpc-reply>"""
 
@@ -259,10 +261,10 @@ class TestNetConfClient(unittest.TestCase):
     def test_compare(self):
         mock_compare = self.c.connection.compare_configuration
         mock_compare.return_value = NCElement(comp_reply, self.tr)
-        self.assertEqual(self.c.compare().replace(" ", ""), "\ntest\n")
+        self.assertIn("<configuration>", self.c.compare().replace(" ", ""))
         mock_compare.assert_called_with(0)
         # ither version
-        self.assertEqual(self.c.compare(10).replace(" ", ""), "\ntest\n")
+        self.assertIn("<configuration>", self.c.compare(10).replace(" ", ""))
         mock_compare.assert_called_with(10)
         # empty compare
         mock_compare.return_value = NCElement(
